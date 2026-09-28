@@ -54,6 +54,13 @@ h2 { font-family:var(--display); font-weight:800; font-size:24px; letter-spacing
 .trade { background:var(--card); border-radius:10px; padding:10px 12px; margin-bottom:6px; font-size:15px }
 .regles { color:var(--muted); font-size:13px; line-height:1.5; margin-top:26px; text-align:center }
 .err { color:var(--bad); text-align:center; padding:30px }
+.imgs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px }
+.imgs a { display:block; background:var(--card); border-radius:12px; padding:6px; color:var(--ink); text-decoration:none; text-align:center; font-weight:600; font-size:14px }
+.imgs img { width:100%; aspect-ratio:1080/1350; object-fit:cover; border-radius:8px; display:block; margin-bottom:6px; background:#0f1b27 }
+.media { background:var(--card); border-radius:14px; padding:10px }
+.media video { width:100%; max-width:380px; aspect-ratio:9/16; border-radius:10px; background:#000; display:block; margin:0 auto }
+.cap { color:var(--muted); font-size:13px; margin-top:8px; text-align:center; text-wrap:pretty }
+.tag { font-size:12px; font-weight:700; background:rgba(255,176,0,.22); color:var(--led); border-radius:99px; padding:2px 8px; margin-left:8px; vertical-align:middle; letter-spacing:0 }
 </style>
 </head>
 <body>
@@ -64,6 +71,7 @@ h2 { font-family:var(--display); font-weight:800; font-size:24px; letter-spacing
     <div class="maj" id="maj">Chargement…</div>
   </header>
   <div id="apercu"></div>
+  <section id="medias"></section>
   <main id="app"></main>
   <p class="regles" id="regles"></p>
 </div>
@@ -78,14 +86,38 @@ const n = v => Math.round(v ?? 0);
 const MOIS = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 const jour = s => { const [y,m,d] = s.split("-").map(Number); return `${d === 1 ? "1er" : d} ${MOIS[m-1]}`; };
 
+// Deux documents : « classement » (l'app Mac, à chaque mise à jour) et « medias » (images du jour et récap vidéo,
+// versions prénoms seulement, envoyées par supabase/publier_medias.py).
 async function charger() {
-  if (new URLSearchParams(location.search).has("demo")) return (await fetch("demo.json", {cache: "no-store"})).json();
+  if (new URLSearchParams(location.search).has("demo")) return {doc: await (await fetch("demo.json", {cache: "no-store"})).json(), medias: null};
   if (SUPABASE_URL.startsWith("__")) throw new Error("bientôt");
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/publication?id=eq.classement&select=data,updated_at`, {headers: {apikey: SUPABASE_ANON}, cache: "no-store"});
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/publication?id=in.(classement,medias)&select=id,data`, {headers: {apikey: SUPABASE_ANON}, cache: "no-store"});
   if (!r.ok) throw new Error(`Supabase a répondu ${r.status}`);
-  const rows = await r.json();
-  if (!rows.length) throw new Error("Rien de publié pour l'instant.");
-  return rows[0].data;
+  const rows = await r.json(), by = Object.fromEntries(rows.map(x => [x.id, x.data]));
+  if (!by.classement) throw new Error("Rien de publié pour l'instant.");
+  return {doc: by.classement, medias: by.medias || null};
+}
+
+// Seules des adresses de l'espace de stockage du projet sont affichées.
+const sur = u => typeof u === "string" && u.startsWith(`${SUPABASE_URL}/storage/v1/object/public/media/`) ? u : "";
+
+function medias(m) {
+  if (!m) return "";
+  let h = "";
+  const im = m.images || {};
+  const imgs = [["classement", "Le classement"], ["faits", "Les faits saillants"]].filter(([k]) => sur(im[k]));
+  if (imgs.length) {
+    h += `<h2>Les images du jour${im.apercu ? `<span class="tag">aperçu</span>` : ""}</h2><div class="imgs">` + imgs.map(([k, t]) =>
+      `<a href="${esc(sur(im[k]))}" target="_blank" rel="noopener"><img src="${esc(sur(im[k]))}" alt="${t}">${t}</a>`).join("") +
+      `</div><div class="cap">Touche une image pour l'ouvrir en grand, puis garde-la ou partage-la.</div>`;
+  }
+  const rc = m.recap;
+  if (rc && sur(rc.video)) {
+    h += `<h2>Le récap de la semaine ${n(rc.semaine)}${rc.apercu ? `<span class="tag">aperçu</span>` : ""}</h2>
+      <div class="media"><video controls playsinline preload="none" poster="${esc(sur(rc.affiche))}" src="${esc(sur(rc.video))}"></video>
+      <div class="cap">Du ${jour(rc.debut)} au ${jour(rc.fin)} · les bons coups, les mauvais coups et un peu de taquinerie. Nouveau chaque lundi matin.</div></div>`;
+  }
+  return h;
 }
 
 function afficher(d) {
@@ -134,8 +166,15 @@ function graphique(d) {
   return s + `</svg>`;
 }
 
+let dernierMedias = null;
 async function go() {
-  try { afficher(await charger()); }
+  try {
+    const {doc, medias: m} = await charger();
+    afficher(doc);
+    // on ne redessine les médias que s'ils ont changé : l'actualisation aux 5 min ne coupe pas une vidéo en cours
+    const cle = JSON.stringify(m);
+    if (cle !== dernierMedias) { document.getElementById("medias").innerHTML = medias(m); dernierMedias = cle; }
+  }
   catch (e) {
     document.getElementById("maj").textContent = "";
     document.getElementById("app").innerHTML = e.message === "bientôt"
