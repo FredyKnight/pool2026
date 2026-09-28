@@ -69,8 +69,8 @@ h2 { font-family:var(--display); font-weight:800; font-size:24px; letter-spacing
 </div>
 <script>
 // Les deux valeurs PUBLIQUES du projet Supabase « Pool hockey » (la clé « anon » ne permet que de LIRE le classement).
-const SUPABASE_URL = "__SUPABASE_URL__";
-const SUPABASE_ANON = "__SUPABASE_ANON__";
+const SUPABASE_URL = "https://jijafhhinuhhosmrvesq.supabase.co";
+const SUPABASE_ANON = "sb_publishable_HiNsnpdqwA25RpPEmMbwJw_UPkoV2cn";
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const logo = ab => ab && /^[A-Z]{3}$/.test(ab) ? `<img src="https://assets.nhle.com/logos/nhl/svg/${ab}_dark.svg" alt="${ab}" loading="lazy">` : "";
