@@ -73,7 +73,7 @@ const SUPABASE_URL = "https://jijafhhinuhhosmrvesq.supabase.co";
 const SUPABASE_ANON = "sb_publishable_HiNsnpdqwA25RpPEmMbwJw_UPkoV2cn";
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const logo = ab => ab && /^[A-Z]{3}$/.test(ab) ? `<img src="https://assets.nhle.com/logos/nhl/svg/${ab}_dark.svg" alt="${ab}" loading="lazy">` : "";
+const logo = ab => ab && /^[A-Z]{3}$/.test(ab) ? `<img src="https://assets.nhle.com/logos/nhl/svg/${ab}_dark.svg" alt="${ab}">` : "";
 const n = v => Math.round(v ?? 0);
 const MOIS = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 const jour = s => { const [y,m,d] = s.split("-").map(Number); return `${d === 1 ? "1er" : d} ${MOIS[m-1]}`; };
