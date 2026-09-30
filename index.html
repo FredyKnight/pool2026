@@ -60,6 +60,18 @@ h2 { font-family:var(--display); font-weight:800; font-size:24px; letter-spacing
 .media { background:var(--card); border-radius:14px; padding:10px }
 .media video { width:100%; max-width:380px; aspect-ratio:9/16; border-radius:10px; background:#000; display:block; margin:0 auto }
 .cap { color:var(--muted); font-size:13px; margin-top:8px; text-align:center; text-wrap:pretty }
+.buts { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr)); gap:10px }
+.but { display:grid; grid-template-columns:52px minmax(0,1fr) auto; gap:10px; align-items:center; background:var(--card); border-radius:14px; padding:10px 12px; color:var(--ink); text-decoration:none }
+.but img.ph { width:52px; height:52px; border-radius:50%; object-fit:cover; background:#0f1b27 }
+.but .n { font-weight:700; font-size:16px; overflow-wrap:anywhere }
+.but .o { color:var(--led); font-weight:800; font-size:13px }
+.but .m { color:var(--muted); font-size:12px; margin-top:2px }
+.play { background:var(--red); color:#fff; border-radius:99px; padding:6px 11px; font-weight:800; font-size:13px; white-space:nowrap; text-decoration:none }
+.matchs { display:grid; gap:6px; margin-top:10px }
+.mt { display:flex; flex-wrap:wrap; align-items:center; gap:8px; background:var(--card); border-radius:10px; padding:8px 10px; font-size:14px }
+.mt img { width:28px; height:20px; object-fit:contain }
+.mt .sc { font-family:var(--display); font-weight:800; font-size:20px }
+.mt .et { color:var(--muted); font-size:12px; margin-right:auto }
 .tag { font-size:12px; font-weight:700; background:rgba(255,176,0,.22); color:var(--led); border-radius:99px; padding:2px 8px; margin-left:8px; vertical-align:middle; letter-spacing:0 }
 </style>
 </head>
@@ -140,6 +152,7 @@ function afficher(d) {
       <div class="tot">${n(r.total)}<small>${r.rang === 1 ? "en tête" : n(r.ecart)}</small></div>
     </summary><div class="places">${places}</div></details>`;
   }
+  h += videos(d);
   if (d.faits && d.faits.cartes.length) {
     h += `<h2>Les faits saillants · ${jour(d.faits.date)}</h2><div class="faits">` + d.faits.cartes.map(c =>
       `<div class="fait"><div class="t">${esc(c.titre).toUpperCase()}</div><div class="n">${logo(c.eq)}${esc(c.nom)}</div><div class="s">${esc(c.stat)}</div><div class="x">${esc(c.texte)}</div></div>`).join("") + `</div>`;
@@ -149,6 +162,29 @@ function afficher(d) {
     h += `<h2>Échanges</h2>` + d.echanges.slice().reverse().map(e => `<div class="trade">${jour(e.date)} · <b>${esc(d.noms[e.participant] || e.participant)}</b> : ${esc(e.sortant)} → ${esc(e.entrant)}</div>`).join("");
   }
   document.getElementById("app").innerHTML = h;
+}
+
+// Les buts de nos joueurs en vidéo (lecteur officiel de la LNH) : seules les adresses de ce lecteur sont acceptées.
+const vid = u => typeof u === "string" && u.startsWith("https://players.brightcove.net/6415718365001/") ? u : "";
+const photo = u => typeof u === "string" && u.startsWith("https://assets.nhle.com/") ? u : "";
+function videos(d) {
+  if (!d.videos || !d.videos.length) return "";
+  return d.videos.map(v => {
+    let h = `<h2>Les buts de nos joueurs · ${esc(v.titre.toLowerCase())}</h2>`;
+    h += v.buts.length ? `<div class="buts">` + v.buts.map(b => `<div class="but">
+        ${photo(b.photo) ? `<img class="ph" src="${esc(photo(b.photo))}" alt="">` : logo(b.eq)}
+        <div><div class="n">${esc(b.nom)} ${logo(b.eq)}</div>
+          <div class="o">${b.owner ? `BUT · chez ${esc(b.owner)}` : "passe d'un joueur du pool"}</div>
+          <div class="m">${esc(b.periode)} · ${esc(b.temps)} · ${esc(b.score)}${b.genre ? ` · ${esc(b.genre)}` : ""}<br>Passes : ${esc(b.passes)}</div></div>
+        ${vid(b.video) ? `<a class="play" href="${esc(vid(b.video))}" target="_blank" rel="noopener">▶ Voir</a>` : `<span class="m">vidéo à venir</span>`}
+      </div>`).join("") + `</div>`
+      : `<p class="cap">Aucun but de nos joueurs${v.titre === "Ce soir" ? " pour l'instant" : ""}.</p>`;
+    if (v.matchs.length) h += `<div class="matchs">` + v.matchs.map(m => `<div class="mt">${logo(m.away)}<span class="sc">${n(m.awayScore)} – ${n(m.homeScore)}</span>${logo(m.home)}
+        <span class="et">${esc(m.etat)}</span>
+        ${vid(m.resume) ? `<a class="play" href="${esc(vid(m.resume))}" target="_blank" rel="noopener">▶ Résumé 3 min</a>` : ""}
+        ${vid(m.condense) ? `<a class="play" href="${esc(vid(m.condense))}" target="_blank" rel="noopener">▶ Condensé</a>` : ""}</div>`).join("") + `</div>`;
+    return h;
+  }).join("");
 }
 
 function graphique(d) {
