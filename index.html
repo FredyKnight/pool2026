@@ -65,7 +65,7 @@ h2 { font-family:var(--display); font-weight:800; font-size:24px; letter-spacing
 .gm span { color:var(--muted); font-size:12px }
 .gm.on { background:rgba(255,90,79,.14) } .gm.on span { color:#ff5a4f; font-weight:700 }
 .pl .inf { margin-top:2px }
-.pl .p { text-align:right } .pl .p .d { font-weight:400; white-space:nowrap }
+.pl .p { text-align:right }
 .autres { background:var(--card); border-radius:12px; padding:10px 12px; margin-top:10px }
 .autres summary { cursor:pointer; font-weight:700 }
 .ab { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; padding:6px 0; border-bottom:1px solid var(--line); font-size:14px }
@@ -180,8 +180,8 @@ function afficher(d) {
       if (f && f.prochain) lignes.push(`Prochain : ${esc(f.prochain)}`);
       const pts = f ? `7 j ${plus(f.sept)} · hier ${f.hierPts == null ? "—" : n(f.hierPts)}${f.aujPts != null ? ` · ce soir <b class="up">${plus(f.aujPts)}</b>` : ""}` : "";
       return `<div class="pl ${p.compte ? "" : "off"}">${logo(p.eq)}<div>${esc(p.nom)}${p.type !== "e" ? ` <span class="d">${esc(p.pos)} · ${esc(p.eq)}</span>` : ""}
-        <div class="d">${esc(f ? f.stats : p.detail)}${p.compte ? "" : " · ne compte pas"}</div>${lignes.length ? `<div class="d inf">${lignes.join(" · ")}</div>` : ""}</div>
-        <div class="p">${n(p.points)}<div class="d">${pts}</div></div></div>`;
+        <div class="d">${esc(f ? f.stats : p.detail)}${p.compte ? "" : " · ne compte pas"}</div>${lignes.length ? `<div class="d inf">${lignes.join(" · ")}</div>` : ""}${pts ? `<div class="d">Au pool : ${pts}</div>` : ""}</div>
+        <div class="p">${n(p.points)}</div></div>`;
     }).join("")).join("") : "";
     const jours = r.auj != null ? `<div class="jours"><span${d.enDirect ? ` class="live"` : ""}>Ce soir <b>${plus(r.auj)}</b></span><span>Hier <b>${plus(r.hier)}</b></span><span>7 jours <b>${plus(r.sept)}</b></span><span>Semaine <b>${plus(r.semaine)}</b></span></div>` : "";
     h += `<details class="row ${r.moi ? "moi" : ""}" data-k="p-${esc(r.nom)}"${ouvert("p-" + r.nom)}><summary>
