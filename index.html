@@ -64,6 +64,8 @@ h2 { font-family:var(--display); font-weight:800; font-size:24px; letter-spacing
 .but { display:grid; grid-template-columns:52px minmax(0,1fr) auto; gap:10px; align-items:center; background:var(--card); border-radius:14px; padding:10px 12px; color:var(--ink); text-decoration:none }
 .but img.ph { width:52px; height:52px; border-radius:50%; object-fit:cover; background:#0f1b27 }
 .but .n { font-weight:700; font-size:16px; overflow-wrap:anywhere }
+.but .n img { width:24px; height:18px; object-fit:contain; vertical-align:-3px; margin-left:4px }
+.but > img:not(.ph) { width:52px; height:40px; object-fit:contain }
 .but .o { color:var(--led); font-weight:800; font-size:13px }
 .but .m { color:var(--muted); font-size:12px; margin-top:2px }
 .play { background:var(--red); color:#fff; border-radius:99px; padding:6px 11px; font-weight:800; font-size:13px; white-space:nowrap; text-decoration:none }
