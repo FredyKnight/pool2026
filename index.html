@@ -54,6 +54,22 @@ h2 { font-family:var(--display); font-weight:800; font-size:24px; letter-spacing
 .trade { background:var(--card); border-radius:10px; padding:10px 12px; margin-bottom:6px; font-size:15px }
 .regles { color:var(--muted); font-size:13px; line-height:1.5; margin-top:26px; text-align:center }
 .err { color:var(--bad); text-align:center; padding:30px }
+.live { color:#ff5a4f } .warn { color:#f2b84b } .bad { color:var(--bad) }
+.fl { font-size:13px; font-weight:800; letter-spacing:-1px; margin-left:6px; white-space:nowrap }
+.jours { display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:4px; font-size:12px; color:var(--muted) }
+.jours b { color:var(--ink) }
+.strip { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px }
+.gm { display:flex; align-items:center; gap:6px; background:var(--card); border-radius:99px; padding:6px 12px; white-space:nowrap; font-size:13px }
+.gm img { width:24px; height:18px; object-fit:contain }
+.gm b { font-family:var(--display); font-size:18px }
+.gm span { color:var(--muted); font-size:12px }
+.gm.on { background:rgba(255,90,79,.14) } .gm.on span { color:#ff5a4f; font-weight:700 }
+.pl .inf { margin-top:2px }
+.pl .p { text-align:right } .pl .p .d { font-weight:400; white-space:nowrap }
+.autres { background:var(--card); border-radius:12px; padding:10px 12px; margin-top:10px }
+.autres summary { cursor:pointer; font-weight:700 }
+.ab { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; padding:6px 0; border-bottom:1px solid var(--line); font-size:14px }
+.ab img { width:24px; height:18px; object-fit:contain } .ab .m { color:var(--muted); font-size:12px; margin-right:auto }
 .imgs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px }
 .imgs a { display:block; background:var(--card); border-radius:12px; padding:6px; color:var(--ink); text-decoration:none; text-align:center; font-weight:600; font-size:14px }
 .imgs img { width:100%; aspect-ratio:1080/1350; object-fit:cover; border-radius:8px; display:block; margin-bottom:6px; background:#0f1b27 }
@@ -134,27 +150,48 @@ function medias(m) {
   return h;
 }
 
+const fleches = m => (m > 0 ? "▲" : "▼").repeat(Math.abs(m) >= 4 ? 3 : Math.abs(m) >= 2 ? 2 : 1);
+const plus = v => v == null ? "—" : v > 0 ? `+${n(v)}` : n(v);
+
 function afficher(d) {
+  // les sections ouvertes (équipe d'un pooler, autres buts) le restent quand la page se relit
+  const ouverts = new Set([...document.querySelectorAll("details[open][data-k]")].map(x => x.dataset.k));
+  const ouvert = k => ouverts.has(k) ? " open" : "";
   const maj = new Date(d.maj);
-  document.getElementById("maj").textContent = `Mis à jour le ${maj.toLocaleDateString("fr-CA", {weekday: "long", day: "numeric", month: "long"})} à ${maj.toLocaleTimeString("fr-CA", {hour: "2-digit", minute: "2-digit"})} · statistiques officielles de la LNH`;
+  document.getElementById("maj").textContent = `Mis à jour le ${maj.toLocaleDateString("fr-CA", {weekday: "long", day: "numeric", month: "long"})} à ${maj.toLocaleTimeString("fr-CA", {hour: "2-digit", minute: "2-digit"})} · statistiques officielles de la LNH${d.enDirect ? " · se relit chaque minute pendant les matchs" : ""}`;
   document.getElementById("apercu").innerHTML = d.apercu ? `<div class="apercu">APERÇU : chiffres de la saison 2025-26 avec nos alignements, en attendant les premiers matchs.</div>` : "";
   document.getElementById("regles").textContent = `${d.regles} · bourse ${d.prix.join(" $ · ")} $`;
   const al = Object.fromEntries(d.alignements.map(t => [t.nom, t]));
-  let h = `<h2>Classement</h2>`;
+  let h = "";
+  if (d.matchs && d.matchs.length) {
+    h += `<h2>${d.enDirect ? `<span class="live">● En direct</span>` : "Les matchs de ce soir"}</h2><div class="strip">` + d.matchs.map(g =>
+      `<div class="gm${g.live ? " on" : ""}">${logo(g.away)}<b>${g.started ? `${n(g.awayScore)} – ${n(g.homeScore)}` : "à"}</b>${logo(g.home)}<span>${esc(g.texte)}</span></div>`).join("") + `</div>`;
+  }
+  h += `<h2>Classement</h2>`;
   for (const r of d.classement) {
     const t = al[r.nom];
-    const mv = r.mouvement ? `<span class="${r.mouvement > 0 ? "up" : "dn"}">${r.mouvement > 0 ? "▲" : "▼"}${Math.abs(r.mouvement)}</span> · ` : "";
+    const mv = r.mouvement ? `<span class="fl ${r.mouvement > 0 ? "up" : "dn"}">${fleches(r.mouvement)} ${Math.abs(r.mouvement)}</span>` : "";
     const groupes = [["j", "JOUEURS — les 10 meilleurs comptent"], ["g", "GARDIENS — le meilleur compte"], ["e", "ÉQUIPES — la meilleure compte"]];
-    const places = t ? groupes.map(([k, titre]) => `<div class="grp">${titre}</div>` + t.places.filter(p => p.type === k).map(p =>
-      `<div class="pl ${p.compte ? "" : "off"}">${logo(p.eq)}<div>${esc(p.nom)}<div class="d">${esc(p.detail)}${p.compte ? "" : " · ne compte pas"}</div></div><div class="p">${n(p.points)}</div></div>`).join("")).join("") : "";
-    h += `<details class="row ${r.moi ? "moi" : ""}"><summary>
+    const places = t ? groupes.map(([k, titre]) => `<div class="grp">${titre}</div>` + t.places.filter(p => p.type === k).map(p => {
+      const f = p.info, lignes = [];
+      if (f && f.statut) lignes.push(`<span class="${f.grave ? "bad" : "warn"}">✚ ${esc(f.statut)}</span>`);
+      if (f && f.enJeu) lignes.push(`<span class="live">● ${esc(f.enJeu)}${f.ceSoir ? ` — ${esc(f.ceSoir)}` : ""}</span>`);
+      else if (f && f.hier) lignes.push(`<span class="${f.pasJoue ? "warn" : ""}">${f.pasJoue ? "Pas joué hier" : `Hier : ${esc(f.hier)}`}</span>`);
+      if (f && f.prochain) lignes.push(`Prochain : ${esc(f.prochain)}`);
+      const pts = f ? `7 j ${plus(f.sept)} · hier ${f.hierPts == null ? "—" : n(f.hierPts)}${f.aujPts != null ? ` · ce soir <b class="up">${plus(f.aujPts)}</b>` : ""}` : "";
+      return `<div class="pl ${p.compte ? "" : "off"}">${logo(p.eq)}<div>${esc(p.nom)}${p.type !== "e" ? ` <span class="d">${esc(p.pos)} · ${esc(p.eq)}</span>` : ""}
+        <div class="d">${esc(f ? f.stats : p.detail)}${p.compte ? "" : " · ne compte pas"}</div>${lignes.length ? `<div class="d inf">${lignes.join(" · ")}</div>` : ""}</div>
+        <div class="p">${n(p.points)}<div class="d">${pts}</div></div></div>`;
+    }).join("")).join("") : "";
+    const jours = r.auj != null ? `<div class="jours"><span${d.enDirect ? ` class="live"` : ""}>Ce soir <b>${plus(r.auj)}</b></span><span>Hier <b>${plus(r.hier)}</b></span><span>7 jours <b>${plus(r.sept)}</b></span><span>Semaine <b>${plus(r.semaine)}</b></span></div>` : "";
+    h += `<details class="row ${r.moi ? "moi" : ""}" data-k="p-${esc(r.nom)}"${ouvert("p-" + r.nom)}><summary>
       <div class="rk">${r.rang}</div>
-      <div><div class="nm">${esc(r.nom)}${r.prix ? `<span class="prix">${r.prix} $</span>` : ""}</div>
-        <div class="sub">${mv}Joueurs ${n(r.joueurs)} · Gardien ${n(r.gardien)} · Équipe ${n(r.equipe)}${r.jour ? ` · +${n(r.jour)} hier` : ""}</div></div>
+      <div><div class="nm">${esc(r.nom)}${r.prix ? `<span class="prix">${r.prix} $</span>` : ""} ${mv}</div>
+        <div class="sub">Joueurs ${n(r.joueurs)} · Gardien ${n(r.gardien)} · Équipe ${n(r.equipe)}${r.ceSoir != null ? ` · en action : ${r.ceSoir} ce soir, ${r.demain} demain` : ""}</div>${jours}</div>
       <div class="tot">${n(r.total)}<small>${r.rang === 1 ? "en tête" : n(r.ecart)}</small></div>
     </summary><div class="places">${places}</div></details>`;
   }
-  h += videos(d);
+  h += videos(d, ouvert);
   if (d.faits && d.faits.cartes.length) {
     h += `<h2>Les faits saillants · ${jour(d.faits.date)}</h2><div class="faits">` + d.faits.cartes.map(c =>
       `<div class="fait"><div class="t">${esc(c.titre).toUpperCase()}</div><div class="n">${logo(c.eq)}${esc(c.nom)}</div><div class="s">${esc(c.stat)}</div><div class="x">${esc(c.texte)}</div></div>`).join("") + `</div>`;
@@ -169,11 +206,12 @@ function afficher(d) {
 // Les buts de nos joueurs en vidéo (lecteur officiel de la LNH) : seules les adresses de ce lecteur sont acceptées.
 const vid = u => typeof u === "string" && u.startsWith("https://players.brightcove.net/6415718365001/") ? u : "";
 const photo = u => typeof u === "string" && u.startsWith("https://assets.nhle.com/") ? u : "";
-function videos(d) {
+function videos(d, ouvert = () => "") {
   if (!d.videos || !d.videos.length) return "";
   return d.videos.map(v => {
+    const nous = v.buts.filter(b => b.pool !== false), eux = v.buts.filter(b => b.pool === false);
     let h = `<h2>Les buts de nos joueurs · ${esc(v.titre.toLowerCase())}</h2>`;
-    h += v.buts.length ? `<div class="buts">` + v.buts.map(b => `<div class="but">
+    h += nous.length ? `<div class="buts">` + nous.map(b => `<div class="but">
         ${photo(b.photo) ? `<img class="ph" src="${esc(photo(b.photo))}" alt="">` : logo(b.eq)}
         <div><div class="n">${esc(b.nom)} ${logo(b.eq)}</div>
           <div class="o">${b.owner ? `BUT · chez ${esc(b.owner)}` : "passe d'un joueur du pool"}</div>
@@ -181,6 +219,9 @@ function videos(d) {
         ${vid(b.video) ? `<a class="play" href="${esc(vid(b.video))}" target="_blank" rel="noopener">▶ Voir</a>` : `<span class="m">vidéo à venir</span>`}
       </div>`).join("") + `</div>`
       : `<p class="cap">Aucun but de nos joueurs${v.titre === "Ce soir" ? " pour l'instant" : ""}.</p>`;
+    if (eux.length) h += `<details class="autres" data-k="autres-${esc(v.titre)}"${ouvert("autres-" + v.titre)}><summary>Les autres buts · ${eux.length}</summary>` + eux.map(b =>
+      `<div class="ab">${logo(b.eq)}<b>${esc(b.nom)}</b><span class="m">${esc(b.periode)} ${esc(b.temps)} · ${esc(b.score)}${b.genre ? ` · ${esc(b.genre)}` : ""}</span>
+       ${vid(b.video) ? `<a class="play" href="${esc(vid(b.video))}" target="_blank" rel="noopener">▶</a>` : `<span class="m">vidéo à venir</span>`}</div>`).join("") + `</details>`;
     if (v.matchs.length) h += `<div class="matchs">` + v.matchs.map(m => `<div class="mt">${logo(m.away)}<span class="sc">${n(m.awayScore)} – ${n(m.homeScore)}</span>${logo(m.home)}
         <span class="et">${esc(m.etat)}</span>
         ${vid(m.resume) ? `<a class="play" href="${esc(vid(m.resume))}" target="_blank" rel="noopener">▶ Résumé 3 min</a>` : ""}
@@ -204,10 +245,11 @@ function graphique(d) {
   return s + `</svg>`;
 }
 
-let dernierMedias = null;
+let dernierMedias = null, dernierDoc = null;
 async function go() {
   try {
     const {doc, medias: m} = await charger();
+    dernierDoc = doc;
     afficher(doc);
     // on ne redessine les médias que s'ils ont changé : l'actualisation aux 5 min ne coupe pas une vidéo en cours
     const cle = JSON.stringify(m);
@@ -220,7 +262,9 @@ async function go() {
       : `<p class="err">Classement indisponible pour l'instant (${esc(e.message)}). Réessaie dans quelques minutes.</p>`;
   }
 }
-go(); setInterval(go, 5 * 60 * 1000);
+// chaque minute pendant les matchs (le Mac publie chaque minute quand l'app est ouverte, sinon aux 5 min), sinon aux 5 min
+async function boucle() { await go(); setTimeout(boucle, dernierDoc && dernierDoc.enDirect ? 60 * 1000 : 5 * 60 * 1000); }
+boucle();
 </script>
 </body>
 </html>
