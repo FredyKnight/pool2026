@@ -75,6 +75,20 @@ h2 { font-family:var(--display); font-weight:800; font-size:24px; letter-spacing
 .pl .rnd { color:var(--muted); font-size:11px; text-align:right }
 .pl .ic { white-space:nowrap; font-size:14px; letter-spacing:1px }
 .pl .p { font-size:18px } .pl .p .d { font-size:10px; font-weight:600 }
+.temple { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr)); gap:12px }
+.temple .tg { font-size:12px; letter-spacing:.16em; font-weight:800; text-transform:uppercase; margin-bottom:6px }
+.tg.or { color:var(--led) } .tg.gl { color:#6fb7e8 } .tg.ne { color:var(--muted) }
+.rec { display:grid; grid-template-columns:44px minmax(0,1fr) auto; gap:12px; align-items:center; border-radius:12px; padding:10px 12px; margin-bottom:8px }
+.rec.or { background:rgba(255,176,0,.09) } .rec.gl { background:rgba(111,183,232,.09) } .rec.ne { background:rgba(255,255,255,.05) }
+.rec.ne .med { background:linear-gradient(135deg,#5d7286,rgba(93,114,134,.45)) }
+.places .temple { margin-top:14px } .places .fb { font-family:var(--display); font-weight:800; font-size:20px; letter-spacing:.5px; text-transform:uppercase; margin:18px 0 8px }
+.rec .med { width:44px; height:44px; border-radius:50%; display:grid; place-items:center; font-size:22px }
+.rec.or .med { background:linear-gradient(135deg,#ffb000,rgba(255,176,0,.45)) } .rec.gl .med { background:linear-gradient(135deg,#4fa3db,rgba(79,163,219,.45)) }
+.rec .lb { font-size:11px; letter-spacing:.12em; font-weight:800; color:var(--muted); text-transform:uppercase }
+.rec .qui { font-weight:700; font-size:18px; line-height:1.15; overflow-wrap:anywhere }
+.rec .qd { color:var(--muted); font-size:13px }
+.rec .pt { font-family:var(--display); font-weight:800; font-size:32px; line-height:1; text-align:right; font-variant-numeric:tabular-nums }
+.rec .pt small { display:block; font-family:var(--body); font-size:11px; font-weight:700; color:var(--muted) }
 .autres { background:var(--card); border-radius:12px; padding:10px 12px; margin-top:10px }
 .autres summary { cursor:pointer; font-weight:700 }
 .ab { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; padding:6px 0; border-bottom:1px solid var(--line); font-size:14px }
@@ -198,7 +212,8 @@ function afficher(d) {
       return `<div class="pl ${p.compte ? "" : "off"}">${p.rnd ? `<span class="rnd">${p.rnd}</span>` : "<span></span>"}${tete}<div><b class="pn">${esc(p.nom)}</b> <span class="ic">${ic}</span>${p.type !== "e" ? ` <span class="d">${esc(p.pos)} · ${esc(p.eq)}</span>` : ""}
         <div class="d">${esc(f ? f.stats : p.detail)}${p.compte ? "" : " · ne compte pas"}</div>${lignes.length ? `<div class="d inf">${lignes.join(" · ")}</div>` : ""}${pts ? `<div class="d">Au pool : ${pts}</div>` : ""}</div>
         <div class="p">${n(p.points)}<div class="d">PPts</div></div></div>`;
-    }).join("")).join("") : "";
+    }).join("")).join("") + (t.fiche && t.fiche.length ? `<div class="fb">En bref · ${esc(t.nom)}</div>`
+      + faitsGroupes(t.fiche, [["Ses records", 0], ["Ses creux", 1], ["Au classement", 2]]) : "") : "";
     const jours = r.auj != null ? `<div class="jours"><span${d.enDirect ? ` class="live"` : ""}>Ce soir <b>${plus(r.auj)}</b></span><span>Hier <b>${plus(r.hier)}</b></span><span>7 jours <b>${plus(r.sept)}</b></span><span>Semaine <b>${plus(r.semaine)}</b></span></div>` : "";
     h += `<details class="row ${r.moi ? "moi" : ""}" data-k="p-${esc(r.nom)}"${ouvert("p-" + r.nom)}><summary>
       <div class="rk">${r.rang}</div>
@@ -207,6 +222,7 @@ function afficher(d) {
       <div class="tot">${n(r.total)}<small>${r.rang === 1 ? "en tête" : n(r.ecart)}</small></div>
     </summary><div class="places">${places}</div></details>`;
   }
+  h += temple(d);
   h += videos(d, ouvert);
   if (d.faits && d.faits.cartes.length) {
     h += `<h2>Les faits saillants · ${jour(d.faits.date)}</h2><div class="faits">` + d.faits.cartes.map(c =>
@@ -217,6 +233,24 @@ function afficher(d) {
     h += `<h2>Échanges</h2>` + d.echanges.slice().reverse().map(e => `<div class="trade">${jour(e.date)} · <b>${esc(d.noms[e.participant] || e.participant)}</b> : ${esc(e.sortant)} → ${esc(e.entrant)}</div>`).join("");
   }
   document.getElementById("app").innerHTML = h;
+}
+
+// Le temple de la renommée (sous le classement) et la fiche « en bref » de chaque pooler (au bas de son équipe) : même
+// présentation — or = records, bleu glacier = creux, gris = classement ; à égalité, tout le monde est nommé.
+function faitLigne(f) {
+  const c = ["or", "gl", "ne"][f.teinte] || "ne";
+  return `<div class="rec ${c}"><span class="med">${esc(f.emoji)}</span>
+    <div><div class="lb">${esc(f.titre)}</div>${f.attente ? `<div class="qd">${esc(f.attente)}</div>` : `${f.qui ? `<div class="qui">${esc(f.qui)}</div>` : ""}${f.quand ? `<div class="qd">${esc(f.quand)}</div>` : ""}`}</div>
+    ${f.valeur != null && !f.attente ? `<div class="pt">${esc(f.valeur)}<small>${esc(f.unite)}</small></div>` : ""}</div>`;
+}
+function faitsGroupes(faits, titres) {
+  return `<div class="temple">` + titres.map(([t, k]) => [t, k, faits.filter(f => f.teinte === k)]).filter(g => g[2].length)
+    .map(([t, k, fs]) => `<div><div class="tg ${["or", "gl", "ne"][k]}">${t}</div>${fs.map(faitLigne).join("")}</div>`).join("") + `</div>`;
+}
+function temple(d) {
+  if (!d.temple || !d.temple.length) return "";
+  return `<h2>Temple de la renommée</h2>${faitsGroupes(d.temple, [["Les records", 0], ["Les creux", 1]])}
+    <div class="cap">Semaine = du lundi au dimanche · une période en cours compte pour les records, pas pour les creux.</div>`;
 }
 
 // Les buts de nos joueurs en vidéo (lecteur officiel de la LNH) : seules les adresses de ce lecteur sont acceptées.
