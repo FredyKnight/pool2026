@@ -66,10 +66,15 @@ h2 { font-family:var(--display); font-weight:800; font-size:24px; letter-spacing
 .gm.on { background:rgba(255,90,79,.14) } .gm.on span { color:#ff5a4f; font-weight:700 }
 .pl .inf { margin-top:2px }
 .pl .p { text-align:right }
-.pl { grid-template-columns:18px 30px minmax(0,1fr) auto 46px }
+.pl { grid-template-columns:16px 46px minmax(0,1fr) auto; align-items:center }
+.pl .tete { position:relative; width:42px; height:42px; display:block }
+.pl .tete img.ph { width:42px; height:42px; border-radius:50%; object-fit:cover; background:rgba(255,255,255,.06) }
+.pl .tete img:not(.ph) { position:absolute; right:-4px; bottom:-3px; width:20px; height:15px; object-fit:contain; background:var(--bg2); border-radius:6px; padding:1px }
+.pl .tete.eq img { position:static; width:40px; height:30px; background:none }
+.pl .pn { font-weight:700 }
 .pl .rnd { color:var(--muted); font-size:11px; text-align:right }
-.pl .ic { text-align:right; white-space:nowrap; font-size:15px; letter-spacing:1px }
-.pl.off .ic { opacity:1 }
+.pl .ic { white-space:nowrap; font-size:14px; letter-spacing:1px }
+.pl .p { font-size:18px } .pl .p .d { font-size:10px; font-weight:600 }
 .autres { background:var(--card); border-radius:12px; padding:10px 12px; margin-top:10px }
 .autres summary { cursor:pointer; font-weight:700 }
 .ab { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; padding:6px 0; border-bottom:1px solid var(--line); font-size:14px }
@@ -187,9 +192,12 @@ function afficher(d) {
       const ic = (p.ceSoir ? `<span title="${esc(f && (f.enJeu || f.prochain) || "Joue ce soir")}">🕐</span>` : "")
         + (p.icone === "x" ? `<span title="Ce choix ne compte pas dans le total">❌</span>` : p.icone === "meilleur" ? `<span title="Le meilleur choix de cette ronde">🏅</span>` : p.icone === "pire" ? `<span title="Le pire choix de cette ronde">👎</span>` : "")
         + (f && f.statut ? `<span class="bad" title="${esc(f.statut)}">${/^Suspendu/.test(f.statut) ? "⛔" : "✚"}</span>` : "");
-      return `<div class="pl ${p.compte ? "" : "off"}">${p.rnd ? `<span class="rnd">${p.rnd}</span>` : ""}${logo(p.eq)}<div>${esc(p.nom)}${p.type !== "e" ? ` <span class="d">${esc(p.pos)} · ${esc(p.eq)}</span>` : ""}
+      // photo officielle (avec le logo de l'équipe en médaillon) ; pour une équipe, son logo ; les icônes À CÔTÉ DU NOM (Fred, 01-10)
+      const pid = Number.isInteger(p.pid) ? p.pid : null;
+      const tete = pid ? `<span class="tete"><img class="ph" src="https://assets.nhle.com/mugs/nhl/latest/${pid}.png" alt="" loading="lazy">${logo(p.eq)}</span>` : `<span class="tete eq">${logo(p.eq)}</span>`;
+      return `<div class="pl ${p.compte ? "" : "off"}">${p.rnd ? `<span class="rnd">${p.rnd}</span>` : "<span></span>"}${tete}<div><b class="pn">${esc(p.nom)}</b> <span class="ic">${ic}</span>${p.type !== "e" ? ` <span class="d">${esc(p.pos)} · ${esc(p.eq)}</span>` : ""}
         <div class="d">${esc(f ? f.stats : p.detail)}${p.compte ? "" : " · ne compte pas"}</div>${lignes.length ? `<div class="d inf">${lignes.join(" · ")}</div>` : ""}${pts ? `<div class="d">Au pool : ${pts}</div>` : ""}</div>
-        <div class="p">${n(p.points)}</div><div class="ic">${ic}</div></div>`;
+        <div class="p">${n(p.points)}<div class="d">PPts</div></div></div>`;
     }).join("")).join("") : "";
     const jours = r.auj != null ? `<div class="jours"><span${d.enDirect ? ` class="live"` : ""}>Ce soir <b>${plus(r.auj)}</b></span><span>Hier <b>${plus(r.hier)}</b></span><span>7 jours <b>${plus(r.sept)}</b></span><span>Semaine <b>${plus(r.semaine)}</b></span></div>` : "";
     h += `<details class="row ${r.moi ? "moi" : ""}" data-k="p-${esc(r.nom)}"${ouvert("p-" + r.nom)}><summary>
