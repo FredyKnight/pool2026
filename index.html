@@ -264,7 +264,7 @@ function videos(d, ouvert = () => "") {
     h += nous.length ? `<div class="buts">` + nous.map(b => `<div class="but">
         ${photo(b.photo) ? `<img class="ph" src="${esc(photo(b.photo))}" alt="">` : logo(b.eq)}
         <div><div class="n">${esc(b.nom)} ${logo(b.eq)}</div>
-          <div class="o">${b.owner ? `BUT · chez ${esc(b.owner)}` : "passe d'un joueur du pool"}</div>
+          <div class="o">${b.owner ? `BUT · ${esc(b.owner)}` : "passe d'un joueur du pool"}</div>
           <div class="m">${esc(b.periode)} · ${esc(b.temps)} · ${esc(b.score)}${b.genre ? ` · ${esc(b.genre)}` : ""}<br>Passes : ${esc(b.passes)}</div></div>
         ${vid(b.video) ? `<a class="play" href="${esc(vid(b.video))}" target="_blank" rel="noopener">▶ Voir</a>` : `<span class="m">vidéo à venir</span>`}
       </div>`).join("") + `</div>`
